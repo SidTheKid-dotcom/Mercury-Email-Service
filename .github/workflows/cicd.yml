@@ -1,0 +1,56 @@
+name: CI/CD Pipeline for Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Log in to Docker Hub
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    # Step 3: Build the Docker image
+    - name: Build Docker image
+      run: |
+        IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/email-service"
+        docker build -t $IMAGE_NAME:latest .
+
+    # Step 4: Push the Docker image to Docker Hub
+    - name: Push Docker image
+      run: |
+        IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/email-service"
+        docker push $IMAGE_NAME:latest
+
+    # Step 5: Deploy the container on EC2
+    - name: Deploy on EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        port: 22
+        script: |
+          # Pull the latest Docker image
+          docker pull ${{ secrets.DOCKER_USERNAME }}/email-service:latest
+          
+          # Stop and remove any existing container
+          docker rm -f email-service-container || true
+          
+          # Start a new container
+          docker run -d --restart unless-stopped \
+            --name email-service-container \
+            --network app-network \
+            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            -e RABBITMQ_URL=${{ secrets.RABBITMQ_URL }} \
+            -e EMAIL_USER=${{ secrets.EMAIL_USER }} \
+            -e EMAIL_PASS=${{ secrets.EMAIL_PASS }} \
+            ${{ secrets.DOCKER_USERNAME }}/email-service:latest
