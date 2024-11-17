@@ -7,7 +7,6 @@ import { PrismaClient } from "@prisma/client";
 dotenv.config();
 
 const prisma = new PrismaClient();
-
 const rabbitmqUrl: any = process.env.RABBITMQ_URL;
 
 // Set up RabbitMQ consumer
@@ -24,8 +23,15 @@ export const connectToRabbitMQ = async () => {
         const event = JSON.parse(msg.content.toString());
         console.log("Received event:", event);
 
-        if (event.eventType === "QueryCreated") {
-          await sendEmailToAllUsers(event.data);
+        switch (event.eventType) {
+          case "QueryCreated":
+            await handleQueryCreatedEvent(event.data);
+            break;
+          case "AnswerCreated":
+            await handleAnswerCreatedEvent(event.data);
+            break;
+          default:
+            console.log(`Unknown event type: ${event.eventType}`);
         }
 
         channel.ack(msg); // Acknowledge the message
@@ -36,31 +42,60 @@ export const connectToRabbitMQ = async () => {
   }
 };
 
-// Fetch all users from the database and send an email
-const sendEmailToAllUsers = async (data: any) => {
+// Handle the "QueryCreated" event
+const handleQueryCreatedEvent = async (data: any) => {
   try {
+    // Fetch all users except the creator of the query
     const users = await prisma.user.findMany({
       where: {
         id: {
-          not: data.creatorId, // Exclude the creator
+          not: data.creatorId,
         },
       },
-      select: { email: true }, // Only fetch the email field
+      select: { email: true },
     });
 
     // Send email to each user
     for (const user of users) {
-      await sendEmail(user.email, data);
+      await sendEmail(
+        user.email,
+        "New Query Created",
+        `A new query has been posted:\n\nContent: ${data.content}\nCreated At: ${data.createdAt}`
+      );
     }
   } catch (error) {
-    console.error("Error fetching users or sending emails:", error);
+    console.error("Error handling QueryCreated event:", error);
+  }
+};
+
+// Handle the "AnswerCreated" event
+const handleAnswerCreatedEvent = async (data: any) => {
+  try {
+    // Fetch the query and its creator's email
+    const query = await prisma.query.findUnique({
+      where: { id: data.queryId },
+      select: {
+        content: true,
+        User_Query_creatorIdToUser: { select: { email: true } },
+      },
+    });
+
+    if (query?.User_Query_creatorIdToUser?.email) {
+      await sendEmail(
+        query.User_Query_creatorIdToUser.email,
+        "Your Query Received an Answer",
+        `Your query:\n\n"${query.content}"\n\nReceived an answer:\n\n"${data.content}"\nCreated At: ${data.createdAt}`
+      );
+    }
+  } catch (error) {
+    console.error("Error handling AnswerCreated event:", error);
   }
 };
 
 // Send email using nodemailer
-const sendEmail = async (recipientEmail: string, data: any) => {
+const sendEmail = async (recipientEmail: string, subject: string, body: string) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail", // Or use another email service
+    service: "gmail",
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -70,8 +105,8 @@ const sendEmail = async (recipientEmail: string, data: any) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: recipientEmail,
-    subject: "New Query Created",
-    text: `A new query has been posted:\n\nContent: ${data.content}\nTags: ${data.tags.join(", ")}\nCreated At: ${data.createdAt}`,
+    subject,
+    text: body,
   };
 
   try {
