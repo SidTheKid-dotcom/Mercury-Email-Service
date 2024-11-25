@@ -32,6 +32,9 @@ A microservice dedicated to email-based functionalities such as notifications an
 
 [![Watch the Email Service Walkthrough](https://img.youtube.com/vi/7l9NQXqjo8g/0.jpg)](https://www.youtube.com/watch?v=7l9NQXqjo8g&t=0s)
 
+Watch the **Mercury Email Service walkthrough**: [https://www.youtube.com/watch?v=7l9NQXqjo8g&t=0s](https://www.youtube.com/watch?v=7l9NQXqjo8g&t=0s)
+
+
 ---
 
 The **Mercury Email Service** is a microservice designed to manage email notifications and related functionalities within the Mercury ecosystem. This backend service is a crucial part of the multi-repository project, ensuring efficient email operations for notifications and updates.
