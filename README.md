@@ -2,9 +2,12 @@
 
 Welcome to **Mercury AIQuest**, a multi-service application built to demonstrate AI-driven features combined with robust backend services. This project is split into three repositories:
 
----
+### 🌟 Quick Introduction
 
-[![Watch the Project Video](https://img.youtube.com/vi/l1pXpls1Vro/0.jpg)](https://www.youtube.com/watch?v=l1pXpls1Vro)
+https://github.com/user-attachments/assets/de732828-c699-498a-ba4d-d691cf34b42d
+
+
+https://github.com/user-attachments/assets/9314b8d6-9871-4dd9-87aa-3ef49a8738e9
 
 ---
 
@@ -25,6 +28,9 @@ Handles all the core CRUD operations for the application, serving as the backbon
 
 ### 3. [Backend: Mercury-Email-Service](https://github.com/SidTheKid-dotcom/Mercury-Email-Service)
 A microservice dedicated to email-based functionalities such as notifications and updates.
+
+### 4. [Backend: AI-RAG-Service](https://github.com/SidTheKid-dotcom/AI-RAG-Service)
+A microservice dedicated to chunking files, storing in vector DB and refining responses using AI, for provinding the feature to talk with files and repos
 
 ---
 
