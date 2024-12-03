@@ -21,7 +21,6 @@ export const connectToRabbitMQ = async () => {
     channel.consume("crud-service-events", async (msg) => {
       if (msg) {
         const event = JSON.parse(msg.content.toString());
-        console.log("Received event:", event);
 
         switch (event.eventType) {
           case "QueryCreated":
@@ -111,7 +110,6 @@ const sendEmail = async (recipientEmail: string, subject: string, body: string) 
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully to:", recipientEmail);
   } catch (error) {
     console.error("Error sending email:", error);
   }
